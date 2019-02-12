@@ -1,0 +1,91 @@
+- name: Mise en place de Wordpress
+  hosts: SVWEB-TRASH
+  gather_facts: yes
+  become: yes
+  remote_user: murmure
+  become_user: root
+  become_method: sudo
+  roles:
+   - mariadb_install
+   - nginx_install
+   - php_install
+  vars:
+    wordpress_server_name: "{{  ansible_default_ipv4.address  }}"
+    mariadb_root_password: "rC66H9f4Yx"
+    wordpressuser_name: "wordpressuser"
+    wordpressuser_password: "Jr8Xs7Vv27"
+    wordpress_dbname: "wordpress"
+    #wordpress_web_server: "SVWEB-TRASH"
+    wordpress_web_server: "localhost"
+  tasks:
+
+  - name: Installation d'une base wordpress
+    mysql_db:
+      name: "{{  wordpress_dbname  }}"
+      state: present
+
+  - name: Création d'un user wordpressuser pour accès à la bdd
+    mysql_user:
+      name: "{{ wordpressuser_name }}"
+      password: "{{ wordpressuser_password }}"
+      priv: "{{  wordpress_dbname  }}.*:ALL"
+      host: "{{  wordpress_web_server  }}"
+      state: present
+
+
+  - name: Téléchargement et décompression des sources Wordpress
+    unarchive:
+      src: https://wordpress.org/latest.tar.gz
+      dest: /tmp
+      remote_src: yes
+
+  - name: Suppression du répertoire wordpress si éxistant
+    file:
+      path: /var/www/html/wordpress
+      state: absent
+
+
+  - name: Copier le répertoire Wordpress dans /var/www/html/
+    command: mv /tmp/wordpress /var/www/html/wordpress
+
+  - name: Positionner les bons droits sur le répertoire de /var/www/html/wordpress
+    file:
+      path: /var/www/html/wordpress
+      owner: www-data
+      group: www-data
+      state: directory
+      recurse: yes
+      mode: 0755
+
+  - name: Création du fichier /etc/nginx/sites-available/wordpress
+    template:
+      src: wordpress.j2
+      dest: /etc/nginx/sites-available/wordpress
+
+
+  - name: Suppression du dossier sites-enabled
+    file:
+      path: /etc/nginx/sites-enabled
+      state: absent
+
+  - name: Recréation du dossier sites-enabled
+    file:
+      path: /etc/nginx/sites-enabled
+      state: directory
+
+  - name: Création du lien symbolique vers sites-enabled
+    file:
+      src: /etc/nginx/sites-available/wordpress
+      path: /etc/nginx/sites-enabled/wordpress
+      state: link
+      force: yes
+
+  - name: Redémarrage du service nginx
+    service:
+      name: nginx
+      state: restarted
+
+  - name: Création du fichier /etc/nginx/sites-available/wordpress
+    template:
+      src: wp-config.j2
+      dest: /var/www/html/wordpress/wp-config.php

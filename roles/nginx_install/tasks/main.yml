@@ -1,0 +1,13 @@
+---
+# tasks file for nginx_install
+- name: Installation de nginx
+  package:
+    name: "{{  item  }}"
+    state: latest
+  loop:
+    - nginx
+- name: Lancer le service en automatique
+  systemd:
+    name: nginx
+    state: started
+    enabled: yes

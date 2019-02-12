@@ -1,0 +1,23 @@
+- name: Mise en place de Nginx
+  hosts: SVWEB-TRASH
+  gather_facts: yes
+  become: yes
+  remote_user: murmure
+  become_user: root
+  become_method: sudo
+
+  vars:
+
+  tasks:
+
+  - name: Installation de nginx
+    package:
+      name: "{{  item  }}"
+      state: latest
+    loop:
+      - nginx
+  - name: Paramétrage du démarrage du SGBD avec le système
+    systemd:
+      name: nginx
+      state: started
+      enabled: yes

@@ -1,0 +1,85 @@
+- name: Mise en place de MariaDB
+  hosts: SVWEB-TRASH
+  gather_facts: yes
+  become: yes
+  remote_user: murmure
+  become_user: root
+  become_method: sudo
+
+  vars:
+    - mariadb_root_password: "rC66H9f4Yx"
+    - wordpressuser_password: "Jr8Xs7Vv27"
+    - wordpress_web_server: "SVWEB-TRASH"
+
+  tasks:
+
+
+  - name: Installation de MariaDB
+    package:
+      name: "{{  item  }}"
+      state: latest
+    loop:
+      - mariadb-server
+      - mariadb-common
+      - mariadb-client
+      - python-mysqldb
+
+  - name: Paramétrage du démarrage du SGBD avec le système
+    systemd:
+      name: mysql
+      state: started
+      enabled: yes
+
+  - name: Définition du mot de passe root du SGBD
+    mysql_user:
+      user: root
+      password: "{{ mariadb_root_password }}"
+      host: localhost
+
+  - name: Suppression du user anonyme pour ansible_fqdn
+    mysql_user:
+      user: ""
+      host: "{{ ansible_fqdn }}"
+      state: "absent"
+
+  - name: Suppression du user anonyme pour connexion locale
+    mysql_user:
+      user: ""
+      state: "absent"
+
+  - name: Secures the MySQL root user for IPV6 localhost (::1)
+    mysql_user:
+     user: "root"
+     password: "{{ mariadb_root_password }}"
+     host: "::1"
+
+  - name: Secures the MySQL root user for IPV4 localhost (127.0.0.1)
+    mysql_user:
+      user: "root"
+      password: "{{ mariadb_root_password }}"
+      host: "127.0.0.1"
+
+  - name: Secures the MySQL root user for localhost domain (localhost)
+    mysql_user:
+      user: "root"
+      password: "{{ mariadb_root_password }}"
+      host: "localhost"
+
+  - name: Secures the MySQL root user for server_hostname domain
+    mysql_user:
+      user: "root"
+      password: "{{ mariadb_root_password }}"
+      host: "{{ ansible_fqdn }}"
+
+  - name: Installation d'une base wordpress
+    mysql_db:
+      name: wordpress
+      state: present
+
+  - name: Création d'un user wordpressuser pour accès à la bdd
+    mysql_user:
+      name: wordpressuser
+      password: "{{ wordpressuser_password }}"
+      priv: 'wordpress.*:ALL'
+      host: "{{  wordpress_web_server  }}"
+      state: present

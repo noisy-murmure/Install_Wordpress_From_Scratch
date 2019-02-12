@@ -1,0 +1,75 @@
+- name: Mise en place de l'authentification par clé RSA
+  hosts: SVWEB
+  gather_facts: yes
+  become: yes
+  remote_user: murmure
+  become_user: root
+  become_method: sudo
+
+
+#*****************************************************
+# Définition des variables
+#*****************************************************
+  vars:
+  # Serveur de déploiement contenant les sources
+    - rsa_key: "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQD22Yh12MstTfU2SDuOCnXzVeWIEwfjml5t4Mcv6Lu80NyDIrKTnslhm308qY89ha4DXRV4mVLTa3AkjNDeGRgTJAxH6eBxfUIqbIh48Ud7eIaZKtSK+y90/ju+IamNnOFsvQs4xKDY1cwew8qooWzhRawxPPmlqFw3bE34uY8SKXzysf8ZFNPlY78HBHD657lw+d/5iLc6+X+jpShXXQpiI6NHuHeqzCBM3F3a9PT6YpOH82MRMcdKL0PIBfJUnSryu8BlO4UpDG95AlhN89TKUzBC5pHdn2Eho+tR1ms0wmuKvAI/h2jn5PerXf1t44/d7+m/wZ4rWD6jWij9dYMx"
+
+    - name_remote_user : "devopsrulez"
+
+#*****************************************************
+# Définition des handlers
+#*****************************************************
+  handlers:
+
+
+#*****************************************************
+# Tâches
+#*****************************************************
+  tasks:
+    - name: Création d'un user pour accès distant
+      user:
+        name: "{{  name_remote_user  }}"
+
+
+
+    - name: Ajout de l'user dans la liste des sudoers
+      lineinfile:
+        path: /etc/sudoers
+        state: present
+        regexp: "{{  name_remote_user  }}"
+        line: "{{  name_remote_user  }} ALL=(ALL) NOPASSWD: ALL"
+        validate: 'visudo -cf %s'
+
+
+    - name: Création des répertoires nécessaires au stockage de la clé RSA
+      file:
+        path: "{{  item  }}"
+        state: directory
+        mode: 0700
+        owner: "{{  name_remote_user  }}"
+        recurse: yes
+      loop:
+           - "/home/{{  name_remote_user  }}"
+           - "/home/{{  name_remote_user  }}/.ssh"
+
+
+
+
+    - name: Création des fichiers nécessaires au stockage de la clé RSA
+      file:
+        path: "{{  item  }}"
+        state: touch
+        mode: 0700
+        owner: "{{  name_remote_user  }}"
+      loop:
+            - "/home/{{  name_remote_user  }}/.ssh/authorized_keys"
+            - "/home/{{  name_remote_user  }}/.ssh/config"
+
+    - name: Ajout des lignes dans les fichiers de configuration de la clé
+      lineinfile:
+        path: "{{  item.path  }}"
+        regexp: "{{  item.texttopast  }}"
+        line: "{{  item.texttopast  }}"
+      loop:
+          - { path: "/home/{{  name_remote_user  }}/.ssh/authorized_keys", texttopast: "{{  rsa_key  }}" }
+          - { path: "/home/{{  name_remote_user  }}/.ssh/config", texttopast: "ForwardAgent yes" }

@@ -1,0 +1,68 @@
+- name: Mise en place de PHP (Debian)
+  hosts: SVWEB-TRASH
+  gather_facts: yes
+  become: yes
+  remote_user: murmure
+  become_user: root
+  become_method: sudo
+  vars:
+    apt_key_path: "/home/murmure/apt.gpg"
+  tasks:
+
+
+
+  - name: Installation de software-properties-common et apt-transport-https
+    package:
+      name: "{{  item  }}"
+      state: latest
+    loop:
+      - software-properties-common
+      - apt-transport-https
+
+  - name: Téléchargement de la clé du repository php
+    get_url:
+      url: https://packages.sury.org/php/apt.gpg
+      dest: "{{  apt_key_path  }}"
+      mode: 0666
+
+  - name: Installation de la clé du repository
+    shell: "apt-key add {{  apt_key_path  }}"
+
+
+  - name: Ajout du repository pour la dernière version de php
+    apt_repository:
+      repo: "deb https://packages.sury.org/php/ {{ ansible_distribution_release }} main"
+      update_cache: yes
+      state: present
+
+  - name: Installation des modules php 7.3
+    package:
+      name: "{{  item  }}"
+      state: latest
+    loop:
+      - php7.3-fpm
+      - php7.3-common
+      - php7.3-mbstring
+      - php7.3-xmlrpc
+      - php7.3-soap
+      - php7.3-gd
+      - php7.3-xml
+      - php7.3-intl
+      - php7.3-mysql
+      - php7.3-cli
+      - php7.3-zip
+      - php7.3-curl
+
+  - name: Mise à jour du fichier de configuration de php 7.3
+    lineinfile:
+      dest: /etc/php/7.3/fpm/php.ini
+      regexp: "{{  item.toreplace  }}"
+      line: "{{  item.replacement  }}"
+      backrefs: yes
+    loop:
+      - {  toreplace: '^file_uploads(.*)$', replacement: "file_uploads = On"  }
+      - {  toreplace: '^(.*)allow_url_fopen(.*)$', replacement: "allow_url_fopen = On"  }
+      - {  toreplace: '^(.*)memory_limit(.*)$', replacement: "memory_limit = 256M"  }
+      - {  toreplace: '^(.*)upload_max_filesize(.*)$', replacement: "upload_max_filesize = 100M"  }
+      - {  toreplace: '^(.*)cgi.fix_pathinfo(.*)$', replacement: "cgi.fix_pathinfo = 0"  }
+      - {  toreplace: '^(.*)max_execution_time(.*)$', replacement: "max_execution_time = 360"  }
