@@ -1,0 +1,87 @@
+- name: Installation de Wordpress avec des serveurs Web et BDD séparés.
+  hosts: SVWEB-02, SVWEB-03
+  gather_facts: yes
+  become: yes
+  remote_user: murmure
+  become_user: root
+  become_method: sudo
+
+
+#*****************************************************
+# Définition des variables
+#*****************************************************
+  vars:
+    #BDD_server_name: "SVWEB-03"
+    #Web_server_name: "SVWEB-02"
+    BDD_server_name: "192.168.1.212"
+    Web_server_name: "192.168.1.213"
+    mariadb_root_password: "rC66H9f4Yx"
+    wordpressuser_name: "wordpressuser"
+    wordpressuser_password: "Jr8Xs7Vv27"
+    wordpress_dbname: "wordpress"
+
+#*****************************************************
+# Définition des variables dynamiques
+#*****************************************************
+  tasks:
+    - name: Ip du serveur Web
+      set_fact:
+        wordpress_web_server: "{{  ansible_default_ipv4.address  }}"
+      when:
+        - "Web_server_name in inventory_hostname"
+        - "inventory_hostname in groups.SVWEB-WEB"
+
+    - name: Ip du serveur de BDD
+      set_fact:
+        wordpress_BDD_server: "{{  ansible_default_ipv4.address  }}"
+      when:
+        - "BDD_server_name in inventory_hostname"
+        - "inventory_hostname in groups.SVWEB-BDD"
+
+    #- name: Caractéristiques du serveur
+  #    debug:
+    #    msg: "{{  inventory_hostname  }}"
+      #msg: "{{  wordpress_web_server  }} and name : {{  Web_server_name  }}"
+
+    #- name: Caractéristiques du serveur de BDD
+    #  debug:
+      #  msg: "{{  BDD_server_name  }} and {{  inventory_hostname  }}"
+      #  msg: "{{  wordpress_BDD_server  }} and name : {{  BDD_server_name  }}"
+
+#*****************************************************
+# Installation des rôles
+#*****************************************************
+
+    - name: Installation du rôle MariaDB sur le serveur de BDD
+      include_role:
+        name: mariadb_install
+      when:
+        - "BDD_server_name in inventory_hostname"
+        - "inventory_hostname in groups.SVWEB-BDD"
+
+
+    - name: Installation des rôles Nginx & PHP 7.3 sur le serveur Web
+      include_role:
+        name: "{{  item  }}"
+      loop:
+        - nginx_install
+        - php_install
+      when:
+        - "Web_server_name in inventory_hostname"
+        - "inventory_hostname in groups.SVWEB-WEB"
+
+#*****************************************************
+# Configuration des serveurs
+#*****************************************************
+
+    - name: Paramétrage du serveur de BDD
+      include: Install_Wordpress_BDD_part.yml
+      when:
+        - "BDD_server_name in inventory_hostname"
+        - "inventory_hostname in groups.SVWEB-BDD"
+
+    - name: Paramétrage du serveur Web
+      include: Install_Wordpress_Web_part.yml
+      when:
+        - "Web_server_name in inventory_hostname"
+        - "inventory_hostname in groups.SVWEB-WEB"

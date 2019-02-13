@@ -1,0 +1,56 @@
+- name: Téléchargement et décompression des sources Wordpress
+  unarchive:
+    src: https://wordpress.org/latest.tar.gz
+    dest: /tmp
+    remote_src: yes
+
+- name: Suppression du répertoire wordpress si éxistant
+  file:
+    path: /var/www/html/wordpress
+    state: absent
+
+
+- name: Copier le répertoire Wordpress dans /var/www/html/
+  command: mv /tmp/wordpress /var/www/html/wordpress
+
+- name: Positionner les bons droits sur le répertoire de /var/www/html/wordpress
+  file:
+    path: /var/www/html/wordpress
+    owner: www-data
+    group: www-data
+    state: directory
+    recurse: yes
+    mode: 0755
+
+- name: Création du fichier /etc/nginx/sites-available/wordpress
+  template:
+    src: wordpress_separate.j2
+    dest: /etc/nginx/sites-available/wordpress
+
+
+- name: Suppression du dossier sites-enabled
+  file:
+    path: /etc/nginx/sites-enabled
+    state: absent
+
+- name: Recréation du dossier sites-enabled
+  file:
+    path: /etc/nginx/sites-enabled
+    state: directory
+
+- name: Création du lien symbolique vers sites-enabled
+  file:
+    src: /etc/nginx/sites-available/wordpress
+    path: /etc/nginx/sites-enabled/wordpress
+    state: link
+    force: yes
+
+- name: Redémarrage du service nginx
+  service:
+    name: nginx
+    state: restarted
+
+- name: Création du fichier /etc/nginx/sites-available/wordpress
+  template:
+    src: wp-config_separate.j2
+    dest: /var/www/html/wordpress/wp-config.php

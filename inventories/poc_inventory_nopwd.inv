@@ -28,6 +28,20 @@ ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 
 [SVWEB-TRASH:vars]
 
+
+[SVWEB-WEB:children]
+SVWEB-01
+SVWEB-02
+
+[SVWEB-WEB:vars]
+
+[SVWEB-BDD:children]
+SVWEB-03
+
+[SVWEB-BDD:vars]
+
+[SVWEB-TRASH:vars]
+
 [SVWEB:children]
 SVWEB-01
 SVWEB-02

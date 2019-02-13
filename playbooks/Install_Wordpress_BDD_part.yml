@@ -1,0 +1,12 @@
+- name: Installation d'une base wordpress
+  mysql_db:
+    name: "{{  wordpress_dbname  }}"
+    state: present
+
+- name: Création d'un user wordpressuser pour accès à la bdd
+  mysql_user:
+    name: "{{ wordpressuser_name }}"
+    password: "{{ wordpressuser_password }}"
+    priv: "{{  wordpress_dbname  }}.*:ALL"
+    host: "{{  wordpress_web_server  }}"
+    state: present
