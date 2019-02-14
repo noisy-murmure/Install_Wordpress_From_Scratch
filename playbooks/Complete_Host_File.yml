@@ -1,0 +1,21 @@
+- name: Création du hostfile
+  hosts: all
+  gather_facts: yes
+  become: yes
+  remote_user: murmure
+  become_user: root
+  become_method: sudo
+  tasks:
+
+  - name: Modification du fichier /etc/hosts
+    lineinfile:
+      dest: /etc/hosts
+      insertafter: EOF
+      line: "{{  item  }}"
+      state: present
+    loop:
+      - "192.168.1.201 SVANS-01.champtoury.com SVANS-01"
+      - "192.168.1.211 SVWEB-01.champtoury.com SVWEB-01"
+      - "192.168.1.212 SVWEB-02.champtoury.com SVWEB-02"
+      - "192.168.1.213 SVWEB-03.champtoury.com SVWEB-03"
+      - "192.168.1.220 SVWEB-TRASH.champtoury.com	SVWEB-TRASH"

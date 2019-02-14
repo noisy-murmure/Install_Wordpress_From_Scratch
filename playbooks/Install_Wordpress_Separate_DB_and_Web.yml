@@ -1,5 +1,5 @@
 - name: Installation de Wordpress avec des serveurs Web et BDD séparés.
-  hosts: SVWEB-02, SVWEB-03
+  hosts: SVWEB-02-server, SVWEB-03-server
   gather_facts: yes
   become: yes
   remote_user: murmure
@@ -11,10 +11,10 @@
 # Définition des variables
 #*****************************************************
   vars:
-    #BDD_server_name: "SVWEB-03"
-    #Web_server_name: "SVWEB-02"
-    BDD_server_name: "192.168.1.212"
-    Web_server_name: "192.168.1.213"
+    BDD_server_name: "SVWEB-03"
+    Web_server_name: "SVWEB-02"
+    #BDD_server_name: "192.168.1.212"
+    #Web_server_name: "192.168.1.213"
     mariadb_root_password: "rC66H9f4Yx"
     wordpressuser_name: "wordpressuser"
     wordpressuser_password: "Jr8Xs7Vv27"
