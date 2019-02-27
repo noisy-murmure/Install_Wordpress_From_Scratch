@@ -38,9 +38,20 @@
       set_fact:
         Web_server_ip: "{{  hostvars[Web_server_name].ansible_default_ipv4.address  }}"
 
-    - name: ip du serveur de BDD
+    - name: ip du serveur Web
       set_fact:
         BDD_server_ip: "{{  hostvars[BDD_server_name].ansible_default_ipv4.address  }}"
+
+    - debug:
+        msg: "Je suis sur le serveur de BDD et l'ip du serveur web est {{  Web_server_ip  }} "
+      when:
+        - "BDD_server_name in inventory_hostname"
+
+    - debug:
+        msg: "Je suis sur le serveur Web et l'ip du serveur de BDD est {{  BDD_server_ip  }} "
+      when:
+        - "Web_server_name in inventory_hostname"
+
 
     - name: FQDN du serveur Web
       set_fact:
@@ -51,43 +62,3 @@
         msg: "Je suis sur le serveur de BDD : l'ip du serveur web est {{  Web_server_ip  }} et son FQDN {{  Web_server_fqdn  }}"
       when:
         - "BDD_server_name in inventory_hostname"
-
-    - debug:
-        msg: "Je suis sur le serveur Web et l'ip du serveur de BDD est {{  BDD_server_ip  }} "
-      when:
-        - "Web_server_name in inventory_hostname"
-
-
-#*****************************************************
-# Installation des rôles
-#*****************************************************
-
-    - name: Installation du rôle MariaDB sur le serveur de BDD
-      include_role:
-        name: mariadb_install
-      when:
-        - "BDD_server_name in inventory_hostname"
-
-
-    - name: Installation des rôles Nginx & PHP 7.3 sur le serveur Web
-      include_role:
-        name: "{{  item  }}"
-      loop:
-        - nginx_install
-        - php_install
-      when:
-        - "Web_server_name in inventory_hostname"
-
-#*****************************************************
-# Configuration des serveurs
-#*****************************************************
-
-    - name: Paramétrage du serveur de BDD
-      include_tasks: Install_Wordpress_BDD_part.yml
-      when:
-        - "BDD_server_name in inventory_hostname"
-
-    - name: Paramétrage du serveur Web
-      include_tasks: Install_Wordpress_Web_part.yml
-      when:
-        - "Web_server_name in inventory_hostname"

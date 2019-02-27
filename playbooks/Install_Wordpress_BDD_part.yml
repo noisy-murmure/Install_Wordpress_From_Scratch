@@ -3,10 +3,28 @@
     name: "{{  wordpress_dbname  }}"
     state: present
 
+
+
 - name: Création d'un user wordpressuser pour accès à la bdd
   mysql_user:
     name: "{{ wordpressuser_name }}"
     password: "{{ wordpressuser_password }}"
     priv: "{{  wordpress_dbname  }}.*:ALL"
-    host: "{{  wordpress_web_server  }}"
+    host: "{{  Web_server_ip  }}"
     state: present
+  loop:
+    - Web_server_ip
+    - Web_server_fqdn
+    - Web_server_name
+
+- name: Autorisation de la connexion distante
+  lineinfile:
+    path:  /etc/mysql/mariadb.conf.d/50-server.cnf
+    state: present
+    regexp: '^bind-address		= 127.0.0.1'
+    line: '#bind-address		= 127.0.0.1'
+
+- name: Redémarrage du service MariaDB
+  service:
+    name: mariadb
+    state: restarted
